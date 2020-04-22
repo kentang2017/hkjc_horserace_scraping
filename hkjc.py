@@ -19,7 +19,8 @@ class Horse():
         browser.get(url)
         #racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-300]]
         racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
-        return [x for x in racedate if len(x) == 10 and x.count("/") == 2]
+        datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
+        return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
         
     #找馬會歷場記錄之日期
     def findraceresults(self, date):
