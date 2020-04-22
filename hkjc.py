@@ -17,9 +17,10 @@ class Horse():
     def getracedate(self):
         url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
         browser.get(url)
-        racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-7]]
-        return racedate
-    
+        #racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-300]]
+        racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
+        return [x for x in racedate if len(x) == 10 and x.count("/") == 2]
+        
     #找馬會歷場記錄之日期
     def findraceresults(self, date):
         racenum = []
