@@ -9,10 +9,11 @@ chrome_options = Options()
 chrome_options.add_argument("--headless")
 browser = webdriver.Chrome(chrome_options=chrome_options)
 
-#找馬會歷場記錄之日期
+
 
 class Horse():
-    def getracedate(self):
+    #找馬會歷場記錄之日期
+    def getracedates(self):
         url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
         browser.get(url)
         racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-7]]
@@ -33,3 +34,15 @@ class Horse():
         if race_num[0] ==  race_num[1]:
             del race_num[0]
         return race_num
+    
+     def matchresults(self, date):
+        data = findraceno(date)
+        matches = []
+        for r in data:
+            horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
+            matches.append(horsedata)
+        horselist = []
+        for h in matches:
+            b = [x for x in g if len(x) > 7]
+            horselist.append(b)
+        return horselist
