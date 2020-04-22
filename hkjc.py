@@ -39,7 +39,7 @@ class Horse():
             del race_num[0]
         return race_num
 
-    def matchresults(self, date):
+    def daymatchresults(self, date):
         data = self.findraceresults(date)
         matches = []
         for r in data:
@@ -49,3 +49,7 @@ class Horse():
             horse_nn = dict(zip(c[0:4],b[0:4]))
             matches.append(horse_nn)
         return matches
+    
+    def getallresults(self):
+        datelist = Horse().getracedate()
+        return [self.daymatchresults(i) for i in datelist]
