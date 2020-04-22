@@ -13,15 +13,14 @@ chrome_options = Options()
 chrome_options.add_argument("--headless")
 browser = webdriver.Chrome(chrome_options=chrome_options)
 
-#找馬會歷場記錄之日期
-
 class Horse():
     def getracedate(self):
         url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
         browser.get(url)
         racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-7]]
         return racedate
-
+    
+    #找馬會歷場記錄之日期
     def findraceresults(self, date):
         racenum = []
         for i in range(0,15):
