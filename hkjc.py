@@ -44,5 +44,7 @@ class Horse():
         for r in data:
             horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
             b = [x for x in horsedata if len(x) > 7]
-            matches.append(b)
+            c = [horsedata[horsedata.index(horse)-1] for horse in b]
+            horse_nn = dict(zip(c,b))
+            matches.append(horse_nn)
         return matches
