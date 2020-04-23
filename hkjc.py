@@ -13,41 +13,43 @@ chrome_options = Options()
 chrome_options.add_argument("--headless")
 browser = webdriver.Chrome(chrome_options=chrome_options)
 
-class Horse():
-    def getracedate(self):
-        url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
+
+def getracedate():
+    url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
+    browser.get(url)
+    #racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-300]]
+    racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
+    datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
+    return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
+
+#找馬會歷場記錄之日期
+def findraceresults(date):
+    racenum = []
+    for i in range(0,15):
+        url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+date+"/"+ str(i)
         browser.get(url)
-        #racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-300]]
-        racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
-        datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
-        return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
+        try:
+            content = (browser.find_element_by_xpath(".//html/body/div").text[browser.find_element_by_xpath(".//html/body/div").text.index("第"):]).replace("\n", " ")
+        except ValueError:
+            content = "無"
+        if content[0] == "第":
+            raceresult = content
+        elif content[0] != "第":
+            raceresult = 0
+        racenum.append(raceresult)
+    race_num =  [x for x in racenum if x != 0]
+    if race_num[0] ==  race_num[1]:
+            del race_num[0]
+    return race_num
 
-    #找馬會歷場記錄之日期
-    def findraceresults(self, date):
-        racenum = []
-        for i in range(0,15):
-            url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+date+"/"+ str(i)
-            browser.get(url)
-            try:
-                content = (browser.find_element_by_xpath(".//html/body/div").text[browser.find_element_by_xpath(".//html/body/div").text.index("第"):]).replace("\n", " ")
-            except ValueError:
-                pass
-            if content[0] == "第":
-                raceresult = content
-            elif content[0] != "第":
-                raceresult = 0
-            racenum.append(raceresult)
-        race_num =  [x for x in racenum if x != 0]
-        return race_num
-
-    def daymatchresults(self, date):
-        data = self.findraceresults(date)
-        matches = []
-        for r in data:
-            horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-            b = [x for x in horsedata if len(x) > 7]
-            c = [horsedata[horsedata.index(horse)-1] for horse in b]
-            horse_nn = dict(zip(c[0:4],b[0:4]))
-            matches.append(horse_nn)
-        return matches
+def daymatchresults(date):
+    data = findraceresults(date)
+    matches = []
+    for r in data:
+        horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
+        b = [x for x in horsedata if len(x) > 7]
+        c = [horsedata[horsedata.index(horse)-1] for horse in b]
+        horse_nn = dict(zip(c[0:4],b[0:4]))
+        matches.append(horse_nn)
+    return matches
     
