@@ -37,15 +37,22 @@ def findraces(date, racecourse):
     race_num = [x for x in racenum if len(x) > 281]
     return list(set(race_num))
 
-def daymatchresults(date, racecourse):
-    data = findraces(date, racecourse)
+def daymatchresults(date):
+    try:
+        data = findraces(date, "HV")
+        if len(data) == 0:
+            data = findraces(date, "ST")
+    except NoSuchElementException:
+        data = findraces(date, "ST")
+        if len(data) == 0:
+            data = findraces(date, "HV")
     matches = []
     for r in data:
         horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-        raceno = r[:r.index("場")]
+        raceno = r[:r.index("場")].replace(" ", "")
         b = [x for x in horsedata if len(x) > 7][0:4]
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
-        horse_nn = {raceno:dict(zip(b, c))}
+        d = dict(zip(c, b))
+        horse_nn = {raceno:d}
         matches.append(horse_nn)
     return matches
-    
