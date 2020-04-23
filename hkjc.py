@@ -21,22 +21,23 @@ class Horse():
         racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
         datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
         return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
-        
+
     #找馬會歷場記錄之日期
     def findraceresults(self, date):
         racenum = []
         for i in range(0,15):
             url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+date+"/"+ str(i)
             browser.get(url)
-            content = browser.find_element_by_xpath(".//html/body/div").text[8982:].replace("\n", " ")
+            try:
+                content = (browser.find_element_by_xpath(".//html/body/div").text[browser.find_element_by_xpath(".//html/body/div").text.index("第"):]).replace("\n", " ")
+            except ValueError:
+                pass
             if content[0] == "第":
                 raceresult = content
             elif content[0] != "第":
                 raceresult = 0
             racenum.append(raceresult)
         race_num =  [x for x in racenum if x != 0]
-        if race_num[0] ==  race_num[1]:
-            del race_num[0]
         return race_num
 
     def daymatchresults(self, date):
@@ -50,6 +51,3 @@ class Horse():
             matches.append(horse_nn)
         return matches
     
-    def getallresults(self):
-        datelist = Horse().getracedate()
-        return [self.daymatchresults(i) for i in datelist]
