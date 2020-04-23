@@ -52,7 +52,10 @@ def daymatchresults(date):
         raceno = r[:r.index("場")].replace(" ", "")
         b = [x for x in horsedata if len(x) > 7][0:4]
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
-        d = dict(zip(c, b))
+        d = []
+        for i in range(0,4):
+            g = "("+c+") "+b
+            d.append(g)
         horse_nn = {raceno:d}
         matches.append(horse_nn)
     return matches
