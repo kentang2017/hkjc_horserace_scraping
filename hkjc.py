@@ -22,34 +22,30 @@ def getracedate():
     datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
     return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
 
-#找馬會歷場記錄之日期
-def findraceresults(date):
-    racenum = []
-    for i in range(0,15):
-        url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+date+"/"+ str(i)
-        browser.get(url)
-        try:
-            content = (browser.find_element_by_xpath(".//html/body/div").text[browser.find_element_by_xpath(".//html/body/div").text.index("第"):]).replace("\n", " ")
-        except ValueError:
-            content = "無"
-        if content[0] == "第":
-            raceresult = content
-        elif content[0] != "第":
-            raceresult = 0
-        racenum.append(raceresult)
-    race_num =  [x for x in racenum if x != 0]
-    if race_num[0] ==  race_num[1]:
-            del race_num[0]
-    return race_num
 
-def daymatchresults(date):
-    data = findraceresults(date)
+def findraces(date, racecourse):
+    racenum = []
+    for i in range(0, 18):
+        url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+date+"/"+racecourse+"/"+str(i)
+        browser.get(url)
+        if racecourse == "HV":
+            content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
+            racenum.append(content)
+        elif racecourse == "ST":
+            content = (browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
+            racenum.append(content)
+    race_num = [x for x in racenum if len(x) > 281]
+    return list(set(race_num))
+
+def daymatchresults(date, racecourse):
+    data = findraces(date, racecourse)
     matches = []
     for r in data:
         horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-        b = [x for x in horsedata if len(x) > 7]
-        c = [horsedata[horsedata.index(horse)-1] for horse in b]
-        horse_nn = dict(zip(c[0:4],b[0:4]))
+        raceno = r[:r.index("場")]
+        b = [x for x in horsedata if len(x) > 7][0:4]
+        c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
+        horse_nn = {raceno:dict(zip(b, c))}
         matches.append(horse_nn)
     return matches
     
