@@ -54,8 +54,8 @@ def daymatchresults(date):
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
         d = []
         for i in range(0,4):
-            g = "("+c+") "+b
+            g = "("+c[i]+") "+b[i]
             d.append(g)
-        horse_nn = {raceno:d}
+        horse_nn = {int(raceno):d}
         matches.append(horse_nn)
-    return matches
+    return pd.concat([pd.DataFrame(matches[i], index=["第一名", "第二名", "第三名", "第四名"]).transpose() for i in range(0, len(matches))]).sort_index(ascending=True)
