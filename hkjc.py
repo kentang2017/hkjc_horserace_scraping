@@ -35,9 +35,11 @@ def findraces(date, racecourse):
             racenum.append(content)
         elif racecourse == "ST":
             content = (browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
-            if content[0] != "第":
-                content = (browser.find_element_by_xpath(".//html/body/div").text[9027:]).replace("\n", " ")
-            racenum.append(content)
+            if content[0] == "第":
+                content2 = content
+            elif content[0] != "第" or content[0] == " ":
+                content2 = browser.find_element_by_xpath(".//html/body/div").text[9029:].replace("\n", " ")
+            racenum.append(content2)
     race_num = [x for x in racenum if len(x) > 283]
     return list(set(race_num))
 
