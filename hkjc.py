@@ -42,7 +42,7 @@ def findraces(date, racecourse):
                 if content2[0]  == "場":
                     content2 = browser.find_element_by_xpath(".//html/body/div").text[9027:].replace("\n", " ")
             racenum.append(content2)
-    race_num = [x for x in racenum if len(x) > 283]
+    race_num = [x for x in racenum if len(x) > 283 or len(x) > 283]
     return list(set(race_num))
 
 def daymatchresults(date):
@@ -54,7 +54,7 @@ def daymatchresults(date):
     for r in data:
         
         horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-        raceno = r[:r.index("場")].replace(" ", "").replace("第", "")
+        raceno = r[:r.index("第 ")].replace(" ", "").replace("第", "")
         b = [x for x in horsedata if len(x) > 7][0:4]
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
         d = []
