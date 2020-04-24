@@ -34,13 +34,13 @@ def findraces(date, racecourse):
                 content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
             racenum.append(content)
         elif racecourse == "ST":
-            content = (browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
+            content = (browser.find_element_by_xpath(".//html/body/div").text[9026:]).replace("\n", " ")
             if content[0] == "第":
                 content2 = content
             elif content[0] != "第" or content[0] == " ":
-                content2 = browser.find_element_by_xpath(".//html/body/div").text[9029:].replace("\n", " ")
+                content2 = browser.find_element_by_xpath(".//html/body/div").text[9025:].replace("\n", " ")
                 if content2[0]  == "場":
-                    content2 = browser.find_element_by_xpath(".//html/body/div").text[9027:].replace("\n", " ")
+                    content2 = browser.find_element_by_xpath(".//html/body/div").text[9024:].replace("\n", " ")
             racenum.append(content2)
     race_num = [x for x in racenum if len(x) > 283 or len(x) > 283]
     return list(set(race_num))
@@ -54,7 +54,7 @@ def daymatchresults(date):
     for r in data:
         
         horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-        raceno = r[:r.index("第 ")].replace(" ", "").replace("第", "")
+        raceno = r[r.index("第"):r.index("場")].replace(" ", "").replace("第", "").replace("場", "")
         b = [x for x in horsedata if len(x) > 7][0:4]
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
         d = []
