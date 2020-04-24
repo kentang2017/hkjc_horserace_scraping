@@ -52,9 +52,11 @@ def daymatchresults(date):
         data = findraces(date, "ST")
     matches = []
     for r in data:
-        
-        horsedata = shlex.split(r[r.index("賠率"):r.index("備註")])[2:]
-        raceno = r[r.index("第"):r.index("場")].replace(" ", "").replace("第", "").replace("場", "")
+        try:
+            horsedata = shlex.split(str(r)[str(r).index("賠率"):str(r).index("備註")])[2:]
+            raceno = r[r.index("第"):r.index("場")].replace(" ", "").replace("第", "").replace("場", "")
+        except ValueError:
+            pass
         b = [x for x in horsedata if len(x) > 7][0:4]
         c = [horsedata[horsedata.index(horse)-1] for horse in b][0:4]
         d = []
