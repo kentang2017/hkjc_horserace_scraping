@@ -30,9 +30,13 @@ def findraces(date, racecourse):
         browser.get(url)
         if racecourse == "HV":
             content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
+            if content[0] != "第":
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9027:]).replace("\n", " ")
             racenum.append(content)
         elif racecourse == "ST":
             content = (browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
+            if content[0] != "第":
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9025:]).replace("\n", " ")
             racenum.append(content)
     race_num = [x for x in racenum if len(x) > 281]
     return list(set(race_num))
