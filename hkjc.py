@@ -1,10 +1,5 @@
 from selenium import webdriver
-from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
-import os
-import re
-import selenium
 import shlex
 import pandas as pd
 import datetime
@@ -133,4 +128,11 @@ def getallresults():
         except (ValueError, UnboundLocalError):
             pass
     return alldata
+
+def getdayresult(date):
+    try:
+        result = {date:daymatchresults2(date, "HV").transpose().to_dict()}
+    except ValueError:
+         result = {date:daymatchresults2(date, "ST").transpose().to_dict()}
+    return result
     
