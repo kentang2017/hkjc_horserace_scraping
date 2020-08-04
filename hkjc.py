@@ -2,7 +2,8 @@
 """
 Created on Thu Jul 30 08:30:35 2020
 
-@author: hooki
+@author: Ken Tang
+@email: kinyeah@gmail.com
 """
 
 from selenium import webdriver
