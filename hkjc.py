@@ -5,7 +5,6 @@ Created on Thu Jul 30 08:30:35 2020
 @author: Ken Tang
 @email: kinyeah@gmail.com
 """
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
@@ -13,26 +12,27 @@ import shlex
 import pandas as pd
 import datetime
 
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+browser = webdriver.Chrome(chrome_options=chrome_options)
+url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
+browser.get(url)
 
 class Getresult():
     def __init__(self, date):
         self.date = date
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        self.browser = webdriver.Chrome(chrome_options=chrome_options)
+        
         
     def getracedate(self):
-        url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
-        self.browser.get(url)
         #racedate = [shlex.split(str(datetime.datetime.strptime(i, '%d/%m/%Y')))[0].replace("-", "") for i in shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:-300]]
-        racedate = shlex.split(self.browser.find_element_by_xpath(".//html/body/div").text)[4:]
+        racedate = shlex.split(browser.find_element_by_xpath(".//html/body/div").text)[4:]
         datelist = [str(x) for x in racedate if len(x) == 10 and x.count("/") == 2]
         return [shlex.split(str(datetime.datetime.strptime(g, '%d/%m/%Y')))[0].replace("-", "") for g in datelist]
 
     def testfindrace(self, racecourse, raceno):
         url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+self.date+"/"+racecourse+"/"+str(raceno)
-        self.browser.get(url)
-        return self.browser.find_element_by_xpath(".//html/body/div").text
+        browser.get(url)
+        return browser.find_element_by_xpath(".//html/body/div").text
 
     def findsinglerace(self, racecourse, raceno):
         raw_no = self.testfindrace(racecourse, raceno).index("第")
@@ -42,12 +42,12 @@ class Getresult():
         racenum = []
         for i in range(0, 18):
             url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+self.date+"/"+racecourse+"/"+str(i)
-            self.browser.get(url)
+            browser.get(url)
             if racecourse == "HV":
-                content = (self.browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
                 racenum.append(content)
             elif racecourse == "ST":
-                content = (self.browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9031:]).replace("\n", " ")
                 racenum.append(content)
         race_num = [x for x in racenum if len(x) > 281]
         return list(set(race_num))
@@ -56,20 +56,20 @@ class Getresult():
         racenum = []
         for i in range(0, 18):
             url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'+self.date+"/"+racecourse+"/"+str(i)
-            self.browser.get(url)
+            browser.get(url)
             if racecourse == "HV":
-                content = (self.browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
                 if content[0] != "第":
-                    content = (self.browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
+                    content = (browser.find_element_by_xpath(".//html/body/div").text[9029:]).replace("\n", " ")
                 racenum.append(content)
             elif racecourse == "ST":
-                content = (self.browser.find_element_by_xpath(".//html/body/div").text[9026:]).replace("\n", " ")
+                content = (browser.find_element_by_xpath(".//html/body/div").text[9026:]).replace("\n", " ")
                 if content[0] == "第":
                     content2 = content
                 elif content[0] != "第" or content[0] == " ":
-                    content2 = self.browser.find_element_by_xpath(".//html/body/div").text[9025:].replace("\n", " ")
+                    content2 = browser.find_element_by_xpath(".//html/body/div").text[9025:].replace("\n", " ")
                     if content2[0]  == "場":
-                        content2 = self.browser.find_element_by_xpath(".//html/body/div").text[9024:].replace("\n", " ")
+                        content2 = browser.find_element_by_xpath(".//html/body/div").text[9024:].replace("\n", " ")
                 racenum.append(content2)
         race_num = [x for x in racenum if len(x) > 283 or len(x) > 283]
         return list(set(race_num))
@@ -144,6 +144,6 @@ class Getresult():
         except (ValueError, NoSuchElementException):
              result = {self.date:self.daymatchresults2("ST").transpose().to_dict()}
         return result
-
+    
 if __name__ == '__main__':
     print(Getresult("20200624").getdayresult())
