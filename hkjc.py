@@ -18,6 +18,25 @@ browser = webdriver.Chrome(chrome_options=chrome_options)
 url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
 browser.get(url)
 
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jul 30 08:30:35 2020
+@author: Ken Tang
+@email: kinyeah@gmail.com
+"""
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException
+import shlex
+import pandas as pd
+import datetime
+
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+browser = webdriver.Chrome(chrome_options=chrome_options)
+url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
+browser.get(url)
+
 class Getresult():
     def __init__(self, date):
         self.date = date
@@ -96,12 +115,37 @@ class Getresult():
                 g = "("+c[i]+") "+b[i]
                 d.append(g)
             try:
-                horse_nn = {int(raceno):d}
+                horse_nn = {str(raceno):d}
                 matches.append(horse_nn)
             except ValueError:
                 pass
         return pd.concat([pd.DataFrame(matches[i], index=["第一名", "第二名", "第三名", "第四名"]).transpose() for i in range(0, len(matches))]).sort_index(ascending=True)
 
+    def getdayraceresult(self, racecourse):
+        rlist = []
+        for r in range(1,12):
+            try:
+                a = [i.split(" ") for i in Getresult(self.date).findsinglerace(racecourse, r).split("\n")][10:][0::3]
+                g = list(filter(lambda a: len(a) == 9, a))
+                rlist.append(g)
+            except ValueError:
+                pass
+        index = ["名次", " 馬號", "馬名", "騎師", "練馬師", "實際負磅", "體重", "檔位", "頭馬距離"]
+        data = []
+        for i in range(0, len(rlist)):
+            d = pd.DataFrame(rlist[i],columns=index)
+            data.append(d)
+        return data
+    
+    def gettable(self):
+        overall = len( Getresult(self.date).getdayraceresult(racecourse))
+        index = ["名次", " 馬號", "馬名", "騎師", "練馬師", "實際負磅", "體重", "檔位", "頭馬距離"]
+        data = []
+        for i in range(0, len(overall)):
+            d = pd.DataFrame(overall[i],columns=index)
+            data.append(d)
+        return data
+    
     def daymatchresults2(self, racecourse):
         data = []
         for i in range(0,15):
@@ -121,7 +165,7 @@ class Getresult():
                 g = "("+c[i]+") "+b[i]
                 d.append(g)
             try:
-                horse_nn = {int(raceno):d}
+                horse_nn = {str(raceno).replace(" ", ""):d}
                 matches.append(horse_nn)
             except ValueError:
                 pass
@@ -145,5 +189,13 @@ class Getresult():
              result = {self.date:self.daymatchresults2("ST").transpose().to_dict()}
         return result
     
+    def getdayresult2(self):
+        try:
+            result = {self.date:self.getdayraceresult("HV")}
+        except (ValueError, NoSuchElementException):
+             result = {self.date:self.getdayraceresult("ST")}
+        return result
+    
+
 if __name__ == '__main__':
-    print(Getresult("20200624").getdayresult())
+    print(Getresult("20200624").getdayresult2())
