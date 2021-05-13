@@ -1,26 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jul 30 08:30:35 2020
-
-@author: Ken Tang
-@email: kinyeah@gmail.com
-"""
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException
-import shlex
-import pandas as pd
-import datetime
-
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-browser = webdriver.Chrome(chrome_options=chrome_options)
-url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
-browser.get(url)
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 30 08:30:35 2020
 @author: Ken Tang
 @email: kinyeah@gmail.com
 """
