@@ -71,6 +71,20 @@ def gethorse2():
 
 d = gethorse2()
 
+def gethorsedata(hid):
+    url = "https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId="+hid
+    browser.get(url)
+    dict1 = {"馬名":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[1]/table/tbody/tr[1]/td/span").text.replace(" ", "").split("(")[0], "馬號":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[1]/table/tbody/tr[1]/td/span").text.replace(" ", "").split("(")[1][:-1]}
+    dict2 = dict(zip(["出生地", "馬歲數"],browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[1]/td[3]").text.replace(" ", "").split("/")))
+    dict3 = dict(zip(["馬毛色", "馬性別"],browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[2]/td[3]").text.replace(" ", "").split("/")))
+    dict4 = {"練馬師":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[1]/td[3]").text,
+             "進口類別":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[3]/td[3]").text,
+             "今季獎金":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[4]/td[3]").text,
+             "總獎金":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[5]/td[3]").text,"冠亞季總出賽次數":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[2]/table/tbody/tr[6]/td[3]").text,
+             "馬主":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[2]/td[3]").text,"現時評分":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[3]/td[3]").text, "季初評分":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[4]/td[3]").text, "馬父系":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[5]/td[3]").text, "馬母系":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[6]/td[3]").text, "馬外祖父":browser.find_element_by_xpath(".//html/body/div/div[1]/table[1]/tbody/tr/td[3]/table/tbody/tr[7]/td[3]").text,
+            } 
+    return {**dict1, **dict2, **dict3, **dict4} 
+
 def gethorsedata(horsename):
     url = "https://racing.hkjc.com/racing/information/Chinese/Horse/Horse.aspx?HorseId="+gethorse2().get(horsename)
     browser.get(url)
