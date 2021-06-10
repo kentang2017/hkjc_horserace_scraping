@@ -258,7 +258,73 @@ class Getresult():
         return result
 
 
-
+def getrow(date, racecourse, raceno):
+    #2021/06/06
+    url = "https://racing.hkjc.com/racing/information/Chinese/Racing/LocalResults.aspx?RaceDate="+date+"&Racecourse="+racecourse+"&RaceNo="+raceno
+    browser.get(url)
+    name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[3]").text.split("(")[0]
+    raceid = browser.find_element_by_xpath(".//html/body/div/div[4]/table/thead/tr/td[1]").text.split("(")[1].replace(")", "")
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[3]").text.split("(")[1][:-1]
+    ground_status  = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[3]").text
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[3]").text.split("(")[1][:-1]
+    racerank = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[1]").text
+    horseno = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[2]").text
+    horsen = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[3]/a").text
+    jockey = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[4]").text
+    ground_dist = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[1]").text.split(" ")[2]
+    trainer = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[5]").text
+    weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[6]").text
+    act_weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[7]").text
+    place = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[8]").text
+    distance_to_first = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[9]").text
+    running_position = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[10]").text
+    finish_time = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[11]").text
+    win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[12]").text
+    trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[5]").text
+    jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr[1]/td[4]").text
+    col1 = ["賽次","比賽日期", "開始時間", "名次","馬ID", "馬名", "馬歲數", "馬性別", "馬毛色", "馬出生地", "馬父系", "馬母系", 
+           "馬外祖父", "季初獎金", "總共獎金", "場地", "路途", "位置", "季初評分", "評分", "練馬師", "騎師", "頭馬距離", "賠率", 
+           "賽際負磅", "沿途走位", "完成時間", "排位體重", "天馬", "日馬", "丁馬", "初傳", "中傳", "末傳", "神煞"]
+    col2 = [ 
+            raceid,
+            racedate,
+            raceno,
+            "未知",
+            racerank,
+            horseid,
+            horsen,
+            gethorsedata(name).get("馬歲數"),
+            gethorsedata(name).get("馬性別"),
+            gethorsedata(name).get("馬毛色"),
+            gethorsedata(name).get("出生地"),
+            gethorsedata(name).get("馬父系"),
+            gethorsedata(name).get("馬母系"),
+            gethorsedata(name).get("馬外祖父"),
+            gethorsedata(name).get("今季獎金"),
+            gethorsedata(name).get("總獎金"),
+            racecourse,
+            ground_dist,
+            place,
+            gethorsedata(name).get("季初評分"),
+            gethorsedata(name).get("現時評分"),
+            trainer,
+            jockey,
+            distance_to_first,
+            win_odds,
+            weight,
+            running_position,
+            finish_time,
+            act_weight,
+             "未知",
+             "未知",
+             "未知",
+             "未知",
+             "未知",
+             "未知",
+             "未知",
+           ]
+    
+    return dict(zip(col1,col2))
 
     
 #if __name__ == '__main__':
