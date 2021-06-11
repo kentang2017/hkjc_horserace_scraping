@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jun 10 21:04:03 2021
-
-@author: hooki
-"""
-# -*- coding: utf-8 -*-
-"""
 Created on Thu Jul 30 08:30:35 2020
 @author: Ken Tang
 @email: kinyeah@gmail.com
@@ -16,6 +10,8 @@ from selenium.common.exceptions import NoSuchElementException
 import shlex
 import pandas as pd
 import datetime
+from kinliuren import kinliuren
+import sxtwl
 
 chrome_options = Options()
 chrome_options.add_argument("--headless")
@@ -29,6 +25,13 @@ columns = ["賽次","比賽日期", "開始時間", "名次","馬ID", "馬名", 
 
 url_list = ["https://racing.hkjc.com/racing/information/Chinese/Horse/SelectHorsebyChar.aspx?ordertype="+str(i) for i in [2,3,4]]
         
+def multi_key_dict_get(d, k):
+    for keys, v in d.items():
+        if k in keys:
+            return v
+    return None
+
+
 def gethorsename_from_url(url):
     browser.get(url)
     lt = []
@@ -273,35 +276,44 @@ class Getresult():
             result = {self.date: c}
         return result
     
-def getrow(date, racecourse, raceno, i):
+def getrow(date, racecourse, raceno, ri):
     #2021/06/06
     url = "https://racing.hkjc.com/racing/information/Chinese/Racing/LocalResults.aspx?RaceDate="+date+"&Racecourse="+racecourse+"&RaceNo="+raceno
     browser.get(url)
-    name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[3]").text.split("(")[0]
+    name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[0]
     raceid = browser.find_element_by_xpath(".//html/body/div/div[4]/table/thead/tr/td[1]").text.split("(")[1].replace(")", "")
     racedate = date
-    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[3]").text.split("(")[1][:-1]
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[1][:-1]
     ground_status  = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[3]").text
-    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[3]").text.split("(")[1][:-1]
-    racerank = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[1]").text
-    horseno = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[2]").text
-    horsen = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[3]/a").text
-    jockey = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[4]").text
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[1][:-1]
+    racerank = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[1]").text
+    horseno = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[2]").text
+    horsen = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]/a").text
+    jockey = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[4]").text
     ground_dist = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[1]").text.split(" ")[2]
-    trainer = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[5]").text
-    weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[6]").text
-    act_weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[7]").text
-    place = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[8]").text
-    distance_to_first = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[9]").text
-    running_position = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[10]").text
-    finish_time = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[11]").text
-    win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[12]").text
-    trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[5]").text
-    jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+i+"]/td[4]").text
+    trainer = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[5]").text
+    weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[6]").text
+    act_weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[7]").text
+    place = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[8]").text
+    distance_to_first = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[9]").text
+    running_position = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[10]").text
+    finish_time = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[11]").text
+    win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[12]").text
+    trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[5]").text
+    jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[4]").text
+    
+    whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
+    dayornight = {("星期一", "星期二", "星期三", "星期四", "星期五"):"夜", ("星期六", "星期日"):"晝" }
+    dayt = {"夜":18, "晝":12}
+    daytt = {"晝":["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"], "夜":["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
+    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+    dnn = multi_key_dict_get(dayornight, ddate)
+    time = dict(zip(range(1, len(daytt.get(dnn))), daytt.get(dnn))).get(int(ri))
     dict2 = {
             "賽次":raceid,
+            "日夜":dnn,
             "日期":racedate,
-            "時間": "未知",
+            "時間":time,
             "路途":ground_dist,
             "路況":ground_status,
             "馬名":name,
@@ -316,8 +328,9 @@ def getrow(date, racecourse, raceno, i):
             "完成時間":finish_time, 
             "排位體重":act_weight
             }
-    dict3 =  [raceid,racedate,ground_dist,ground_status, "未知",name,racerank,place,jockey,trainer,distance_to_first,win_odds,weight, running_position, finish_time, act_weight]
-    return pd.DataFrame(list(dict2.values())).transpose()
+    dict1 =  ["賽次","日期","時間","日夜","路途","路況","馬名","名次","檔位","騎師","練馬師","頭馬距離","賠率","賽際負磅","沿途走位","完成時間","排位體重"]
+    dict3 =  [raceid,racedate,time,dnn,ground_dist,ground_status,name,racerank,place,jockey,trainer,distance_to_first,win_odds,weight, running_position, finish_time, act_weight]
+    return dict(zip(dict1, dict3))
     #return dict3
     
 def gethorseracerow(date, racecourse, raceno):
@@ -328,7 +341,7 @@ def gethorseracerow(date, racecourse, raceno):
             horses.append(b)
         except NoSuchElementException:
             pass
-    return pd.concat(horses, ignore_index=True)
+    return horses
 
 def getdaymatches(date, racecourse):
     horses = []
@@ -339,5 +352,3 @@ def getdaymatches(date, racecourse):
         except (NoSuchElementException, TypeError):
             pass
     return horses
-
-print(getdaymatches("2021/06/06","ST"))
