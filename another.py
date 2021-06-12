@@ -308,7 +308,7 @@ def getrow(date, racecourse, raceno, ri):
     daytt = {"晝":["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"], "夜":["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
     ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
     dnn = multi_key_dict_get(dayornight, ddate)
-    time = dict(zip(range(1, len(daytt.get(dnn))), daytt.get(dnn))).get(int(ri))
+    time = dict(zip(range(1, len(daytt.get(dnn))), daytt.get(dnn))).get(int(raceno))
     dict2 = {
             "賽次":raceid,
             "日夜":dnn,
