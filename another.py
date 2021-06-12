@@ -4,13 +4,16 @@ Created on Thu Jul 30 08:30:35 2020
 @author: Ken Tang
 @email: kinyeah@gmail.com
 """
+
+from pymongo import MongoClient
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
 import shlex
 import pandas as pd
-import datetime
-from kinliuren import kinliuren
+import datetime, itertools
+from kinqimen import Qimen
+import kinliuren
 import sxtwl
 
 chrome_options = Options()
@@ -24,13 +27,47 @@ columns = ["賽次","比賽日期", "開始時間", "名次","馬ID", "馬名", 
            "賽際負磅", "沿途走位", "完成時間", "排位體重", "配備", "天馬", "日馬", "丁馬", "初傳", "中傳", "末傳", "神煞"]
 
 url_list = ["https://racing.hkjc.com/racing/information/Chinese/Horse/SelectHorsebyChar.aspx?ordertype="+str(i) for i in [2,3,4]]
-        
+
+tiangan = list('甲乙丙丁戊己庚辛壬癸')
+dizhi = list('子丑寅卯辰巳午未申酉戌亥')
+
+client = MongoClient("mongodb+srv://savedata:savedata@cluster0-im6tx.gcp.mongodb.net/test?retryWrites=true&w=majority")
+db = client.get_database('qimen')
+db_shigankeying = db.shigankeying
+
+hrdb = client.get_database('hkjc')
+db_matches = hrdb.matches
+
 def multi_key_dict_get(d, k):
     for keys, v in d.items():
         if k in keys:
             return v
     return None
 
+def jiazi():
+    jiazi = [tiangan[x % len(tiangan)] + dizhi[x % len(dizhi)] for x in range(60)]
+    return jiazi
+
+def repeat_list(n, thelist):
+        return [repetition for i in thelist for repetition in itertools.repeat(i,n) ]
+    
+def minutes_jiazi_d():
+    t = []
+    for h in range(0,24):
+        for m in range(0,60):
+            b = str(h)+":"+str(m)
+            t.append(b)
+    minutelist = dict(zip(t, itertools.cycle(repeat_list(2, jiazi()))))
+    return minutelist
+
+def gangzhi(year, month, day, hour, minute):
+    lunar = sxtwl.Lunar()
+    cdate = lunar.getDayBySolar(year, month, day)
+    yy_mm_dd = tiangan[cdate.Lyear2.tg]+dizhi[cdate.Lyear2.dz],  tiangan[cdate.Lmonth2.tg]+dizhi[cdate.Lmonth2.dz],  tiangan[cdate.Lday2.tg]+dizhi[cdate.Lday2.dz]
+    timegz = lunar.getShiGz(cdate.Lday2.tg, hour)
+    new_hh = tiangan[timegz.tg]+dizhi[timegz.dz]
+    gangzhi_minute = minutes_jiazi_d().get(str(hour)+":"+str(minute))
+    return [yy_mm_dd[0], yy_mm_dd[1],  yy_mm_dd[2], new_hh, gangzhi_minute]
 
 def gethorsename_from_url(url):
     browser.get(url)
@@ -106,6 +143,18 @@ def gethorsedata(horsename):
             } 
     return {**dict1, **dict2, **dict3, **dict4} 
 
+generals_zhi = {**dict(zip(['貴'+i for i in dizhi], "吉,吉,凶,吉,凶,凶,凶,吉,吉,凶,凶,吉".split(","))),
+**dict(zip(['后'+i for i in dizhi], "凶,凶,吉,凶,凶,凶,凶,凶,吉,凶,凶,吉".split(","))),
+**dict(zip(['陰'+i for i in dizhi], "凶,凶,凶,凶,吉,凶,凶,吉,吉,吉,凶,凶".split(","))),
+**dict(zip(['玄'+i for i in dizhi], "吉,吉,凶,凶,吉,凶,凶,凶,吉,吉,吉,凶".split(","))),
+**dict(zip(['常'+i for i in dizhi], "凶,吉,凶,凶,吉,吉,吉,吉,吉,吉,凶,吉".split(","))),
+**dict(zip(['虎'+i for i in dizhi], "凶,凶,凶,凶,凶,凶,凶,凶,吉,凶,凶,凶".split(","))),
+**dict(zip(['空'+i for i in dizhi], "凶,凶,凶,凶,凶,凶,凶,吉,凶,凶,凶,凶".split(","))),
+**dict(zip(['龍'+i for i in dizhi], "吉,凶,吉,吉,吉,凶,凶,凶,凶,凶,吉,吉".split(","))),
+**dict(zip(['勾'+i for i in dizhi], "凶,凶,凶,凶,吉,吉,凶,吉,凶,凶,凶,凶".split(","))),
+**dict(zip(['合'+i for i in dizhi], "凶,吉,吉,吉,凶,凶,吉,吉,吉,凶,凶,吉".split(","))),
+**dict(zip(['雀'+i for i in dizhi], "凶,凶,吉,吉,凶,吉,吉,凶,吉,凶,凶,凶".split(","))),
+**dict(zip(['蛇'+i for i in dizhi], "吉,吉,吉,凶,吉,吉,吉,吉,吉,凶,凶,吉".split(",")))}
 
 class Getresult():
     def __init__(self, date):
@@ -276,39 +325,81 @@ class Getresult():
             result = {self.date: c}
         return result
     
-def getrow(date, racecourse, raceno, ri):
+def getrow(date, racecourse, raceno, ri, timeslot):
     #2021/06/06
-    url = "https://racing.hkjc.com/racing/information/Chinese/Racing/LocalResults.aspx?RaceDate="+date+"&Racecourse="+racecourse+"&RaceNo="+raceno
+    url = "https://racing.hkjc.com/racing/information/Chinese/Racing/LocalResults.aspx?RaceDate="+date+"&Racecourse="+racecourse+"&RaceNo="+str(raceno)
     browser.get(url)
-    name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[0]
+    name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[3]").text.split("(")[0]
     raceid = browser.find_element_by_xpath(".//html/body/div/div[4]/table/thead/tr/td[1]").text.split("(")[1].replace(")", "")
     racedate = date
-    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[1][:-1]
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[3]").text.split("(")[1][:-1]
     ground_status  = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[3]").text
-    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]").text.split("(")[1][:-1]
-    racerank = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[1]").text
-    horseno = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[2]").text
-    horsen = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[3]/a").text
-    jockey = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[4]").text
+    horseid = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[3]").text.split("(")[1][:-1]
+    racerank = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[1]").text
+    horseno = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[2]").text
+    horsen = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[3]/a").text
+    jockey = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[4]").text
     ground_dist = browser.find_element_by_xpath(".//html/body/div/div[4]/table/tbody/tr[2]/td[1]").text.split(" ")[2]
-    trainer = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[5]").text
-    weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[6]").text
-    act_weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[7]").text
-    place = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[8]").text
-    distance_to_first = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[9]").text
-    running_position = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[10]").text
-    finish_time = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[11]").text
-    win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[12]").text
-    trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[5]").text
-    jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+ri+"]/td[4]").text
+    trainer = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[5]").text
+    weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[6]").text
+    act_weight = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[7]").text
+    place = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[8]").text
+    distance_to_first = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[9]").text
+    running_position = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[10]").text
+    finish_time = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[11]").text
+    win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[12]").text
+    trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[5]").text
+    jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[4]").text
     
     whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
     dayornight = {("星期一", "星期二", "星期三", "星期四", "星期五"):"夜", ("星期六", "星期日"):"晝" }
     dayt = {"夜":18, "晝":12}
-    daytt = {"晝":["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"], "夜":["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
+    daytt = {"晝":
+            {0:["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"],
+            1:["12:30","13:00", "13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"],
+            2:["13:00","13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"]}, 
+            "夜":
+            {0:["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"], 
+            1:["19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00"],
+            2:["19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"],
+            3:["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
+            }
     ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
     dnn = multi_key_dict_get(dayornight, ddate)
-    time = dict(zip(range(1, len(daytt.get(dnn))), daytt.get(dnn))).get(int(raceno))
+    time = dict(zip(range(1, len(daytt.get(dnn).get(timeslot))), daytt.get(dnn).get(timeslot))).get(int(raceno))
+    hour = int(time.split(":")[0])
+    minute = int(time.split(":")[1])
+    getdhorse = dhorse(date, hour, minute)
+    getthree = three(date, hour, minute)
+    getdaythree = daythree(date, hour, minute)
+    liuren_place_day = int(place) in getdaythree
+    liuren_horseno =  int(horseno) in getthree
+    getmhorse = moonhorse(date, hour, minute)
+    getdinhorse = dinhorse(date, hour, minute)
+    ggolden = golden(date, hour, minute, int(place))
+    try:
+        getqimenh = qimenh(date, hour, minute, int(place))
+    except TypeError:
+        getqimenh = "凶"
+    
+    if int(horseno) == getdhorse:
+        liuren_dhoresno = True
+    else:
+        liuren_dhoresno = False
+    if getdhorse == int(place):
+        liuren_dhorse = True
+    else:
+        liuren_dhorse = False
+    if getmhorse == int(place):
+        liuren_mhorse = True
+    else:
+        liuren_mhorse = False
+    if getdinhorse == int(place):
+        liuren_dinhorse = True
+    else:
+        liuren_dinhorse = False
+    liuren_place = int(place) in getthree
+    general = getgeneral(date, hour, minute, int(place))
     dict2 = {
             "賽次":raceid,
             "日夜":dnn,
@@ -328,11 +419,17 @@ def getrow(date, racecourse, raceno, ri):
             "完成時間":finish_time, 
             "排位體重":act_weight
             }
-    dict1 =  ["賽次","日期","時間","日夜","路途","路況","馬名","名次","檔位","騎師","練馬師","頭馬距離","賠率","賽際負磅","沿途走位","完成時間","排位體重"]
-    dict3 =  [raceid,racedate,time,dnn,ground_dist,ground_status,name,racerank,place,jockey,trainer,distance_to_first,win_odds,weight, running_position, finish_time, act_weight]
-    return dict(zip(dict1, dict3))
-    #return dict3
-    
+    dict1 =  ["賽次","場次", "日期","時間","日夜","路途","路況","馬號","馬名","名次","檔位","騎師","練馬師","頭馬距離","賠率","賽際負磅","沿途走位","完成時間",
+              "排位體重", "六壬天馬", "六壬丁馬",
+              "六壬日馬檔位", "六壬日馬馬號", "六壬日課三傳檔位", "六壬時盤三傳檔位", 
+              "六壬時盤三傳馬號", "六壬神煞", "日家奇門檔位", "時家奇門檔位"]
+    dict3 =  [raceid, raceno,racedate,time,dnn,ground_dist,ground_status, horseno,name,racerank,place,jockey,trainer,distance_to_first,win_odds,weight, running_position, finish_time, 
+              act_weight, liuren_mhorse, liuren_dinhorse,
+              liuren_dhorse, liuren_dhoresno , liuren_place_day, liuren_place, liuren_horseno, 
+              general, ggolden, getqimenh]
+
+    return dict(zip(dict1,dict3))
+
 def gethorseracerow(date, racecourse, raceno):
     horses = []
     for y in range(1,20):
@@ -352,3 +449,122 @@ def getdaymatches(date, racecourse):
         except (NoSuchElementException, TypeError):
             pass
     return horses
+
+def getliurend(d, hour, minute):
+    dated = d.split("/")
+    jieqi = Qimen(int(dated[0]), int(dated[1]), int(dated[2]), hour).find_jieqi()
+    gz = gangzhi(int(dated[0]), int(dated[1]), int(dated[2]), int(hour), int(minute))
+    liuren = kinliuren.Liuren(jieqi, gz[2], gz[3]).result(0)
+    return liuren
+
+def getliuren(d, hour, minute):
+    dated = d.split("/")
+    jieqi = Qimen(int(dated[0]), int(dated[1]), int(dated[2]), hour).find_jieqi()
+    gz = gangzhi(int(dated[0]), int(dated[1]), int(dated[2]), int(hour), int(minute))
+    liuren = kinliuren.Liuren(jieqi, gz[3], gz[4]).result(0)
+    return liuren
+
+def tiandid(d, hour, minute):
+    tiandi = getliurend(d, hour, minute).get("地轉天盤")
+    a = dict(zip(dizhi, range(1,13)))
+    c = dict(zip(list(tiandi.values()), [a.get(i) for i in list(tiandi.keys())]))
+    return c
+
+def tiandi(d, hour, minute):
+    tiandi = getliuren(d, hour, minute).get("地轉天盤")
+    a = dict(zip(dizhi, range(1,13)))
+    c = dict(zip(list(tiandi.values()), [a.get(i) for i in list(tiandi.keys())]))
+    return c
+
+def dhorse(d, hour, minute):
+    #2021/06/06
+    dhorsep = getliurend(d, hour, minute).get("日馬")
+    return tiandid(d, hour, minute).get(dhorsep)
+
+def three(d, hour,  minute):
+    getthree = [i[0]for i in list(getliuren(d, hour, minute).get("三傳").values())]
+    return [tiandi(d, hour, minute).get(y) for y in getthree]
+    
+def daythree(d, hour,  minute):
+    getthree = [i[0]for i in list(getliurend(d, hour, minute).get("三傳").values())]
+    return [tiandid(d, hour, minute).get(y) for y in getthree]
+
+def threemix(d, hour, minute):
+    getthree = [i[0]for i in list(getliurend(d, hour, minute).get("三傳").values())]
+    return [tiandi(d, hour, minute).get(y) for y in getthree]
+    
+def getgeneral(d, hour, minute, place):
+    #2021/06/06
+    tiandi = getliuren(d, hour, minute).get("天地盤").get("地盤")
+    general = getliuren(d, hour, minute).get("天地盤").get("天將")
+    zdict = dict(zip(range(1,13), tiandi))
+    gdict = dict(zip(range(1,13), general))
+    #return dict(zip(range(1,13), earth)).get(place)
+    return generals_zhi.get(gdict.get(place)+zdict.get(int(place)))
+
+def moonhorse(d, hour, minute):
+    moonhorsedict = {tuple(list("寅申")):"午", tuple(list("卯酉")):"申", tuple(list("辰戌")):"戌", tuple(list("巳亥")):"子", tuple(list("午子")):"寅", tuple(list("丑未")):"辰"}
+    dated = d.split("/")
+    gz = gangzhi(int(dated[0]), int(dated[1]), int(dated[2]), int(hour), int(minute))
+    getmhorse = multi_key_dict_get(moonhorsedict, gz[1][1])
+    tiandi = getliuren(d, hour, minute).get("天地盤").get("地盤")
+    zdict = dict(zip(tiandi,range(1,13)))
+    return zdict.get(getmhorse)
+
+def dinhorse(d, hour, minute):
+    dinhorsedict = {"甲子":"卯", "甲戌":"丑", "甲申":"亥", "甲午":"酉", "甲辰":"未", "甲寅":"巳"}
+    liujiashun_dict = {tuple(jiazi()[0:10]):'甲子', tuple(jiazi()[10:20]):"甲戌", tuple(jiazi()[20:30]):"甲申", tuple(jiazi()[30:40]):"甲午", tuple(jiazi()[40:50]):"甲辰",  tuple(jiazi()[50:60]):"甲寅"  }
+    dated = d.split("/")
+    dayganzhi = gangzhi(int(dated[0]), int(dated[1]), int(dated[2]), int(hour), int(minute))[3]
+    shun =  multi_key_dict_get(liujiashun_dict, dayganzhi)
+    getdinhorese = multi_key_dict_get(dinhorsedict, shun)
+    tiandi = getliuren(d, hour, minute).get("天地盤").get("地盤")
+    zdict = dict(zip(tiandi,range(1,13)))
+    return zdict.get(getdinhorese)
+
+def golden(d, hour, minute, place):
+    dd = d.split("/")
+    a = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).g.get("星").keys())
+    d = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).g.get("星").values())
+    b = {"坎":(1,10),
+        "坤":(2,11),
+        "震":(3,12),
+        "巽":(4,13),
+        "中":(5,14),
+        "乾":(6,15),
+        "兌":(7,16),
+        "艮":(8,17),
+        "離":(9,18)}
+    e = [b.get(i) for i in a]
+    c = dict(zip( ['太乙','攝提', '軒轅', '招搖','天符', '青龍', '咸池','太陰','天乙'], list("吉凶凶凶吉吉凶吉吉")))
+    return multi_key_dict_get(dict(zip([b.get(i) for i in a],[ c.get(y) for y in d])), place)
+
+def qimenh(d, hour, minute, place):
+    dd = d.split("/")
+    b = {"坎":(1,10),
+        "坤":(2,11),
+        "震":(3,12),
+        "巽":(4,13),
+        "中":(5,14),
+        "乾":(6,15),
+        "兌":(7,16),
+        "艮":(8,17),
+        "離":(9,18)}
+    tk = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).p.get("天盤")[0].keys())
+    tv = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).p.get("天盤")[0].values())
+    t1 = [b.get(i) for i in tk]
+    t = dict(zip(t1, tv))
+    dk = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).p.get("地盤").keys())
+    dv = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).p.get("地盤").values())
+    d1 = [b.get(i) for i in dk]
+    d = dict(zip(d1, dv))
+    td = multi_key_dict_get(t, int(place)) + multi_key_dict_get(d, int(place))
+    return db_shigankeying.find_one({"天地":td}).get(td)[1]
+
+for y in range(1,11):
+    for i in range(1,13):
+        try:
+            db_matches.insert_one(getrow("2021/06/09", "HV",y, i, 3))
+            print("done")
+        except (IndexError, TypeError, NoSuchElementException):
+            pass
