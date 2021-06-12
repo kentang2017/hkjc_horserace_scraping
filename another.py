@@ -366,7 +366,7 @@ def getrow(date, racecourse, raceno, ri, timeslot):
             }
     ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
     dnn = multi_key_dict_get(dayornight, ddate)
-    time = dict(zip(range(1, len(daytt.get(dnn).get(timeslot))), daytt.get(dnn).get(timeslot))).get(int(raceno))
+    time = dict(zip(range(1, len(daytt.get(dnn).get(timeslot))+1), daytt.get(dnn).get(timeslot))).get(int(raceno))
     hour = int(time.split(":")[0])
     minute = int(time.split(":")[1])
     getdhorse = dhorse(date, hour, minute)
