@@ -400,6 +400,9 @@ def getrow(date, racecourse, raceno, ri, timeslot):
         liuren_dinhorse = False
     liuren_place = int(place) in getthree
     general = getgeneral(date, hour, minute, int(place))
+    getyincome = yincome_num(date, hour, minute, int(place))
+    guxu_place = hourguxu(d, hour, minute, int(place))
+    guxu_hno = hourguxu(d, hour, minute, int(horseno))
     dict2 = {
             "賽次":raceid,
             "日夜":dnn,
@@ -420,16 +423,16 @@ def getrow(date, racecourse, raceno, ri, timeslot):
             "排位體重":act_weight
             }
     dict1 =  ["賽次","場次", "日期","時間","日夜","路途","路況","馬號","馬名","名次","檔位","騎師","練馬師","頭馬距離","賠率","賽際負磅","沿途走位","完成時間",
-              "排位體重", "六壬天馬", "六壬丁馬",
+              "排位體重", "檔位時孤", "馬號時孤" ,"六壬天馬", "六壬丁馬",
               "六壬日馬檔位", "六壬日馬馬號", "六壬日課三傳檔位", "六壬時盤三傳檔位", 
-              "六壬時盤三傳馬號", "六壬神煞", "日家奇門檔位", "時家奇門檔位"]
+              "六壬時盤三傳馬號", "六壬神煞", "日家奇門檔位", "時家奇門檔位", "演禽"]
     dict3 =  [raceid, raceno,racedate,time,dnn,ground_dist,ground_status, horseno,name,racerank,place,jockey,trainer,distance_to_first,win_odds,weight, running_position, finish_time, 
-              act_weight, liuren_mhorse, liuren_dinhorse,
+              act_weight, guxu_hno, guxu_place ,liuren_mhorse, liuren_dinhorse,
               liuren_dhorse, liuren_dhoresno , liuren_place_day, liuren_place, liuren_horseno, 
-              general, ggolden, getqimenh]
-
+              general, ggolden, getqimenh,getyincome ]
     return dict(zip(dict1,dict3))
 
+    
 def gethorseracerow(date, racecourse, raceno):
     horses = []
     for y in range(1,20):
@@ -457,6 +460,10 @@ def getliurend(d, hour, minute):
     liuren = kinliuren.Liuren(jieqi, gz[2], gz[3]).result(0)
     return liuren
 
+def gz(d, hour, minute): 
+    dated = d.split("/")
+    return  gangzhi(int(dated[0]), int(dated[1]), int(dated[2]), int(hour), int(minute))
+    
 def getliuren(d, hour, minute):
     dated = d.split("/")
     jieqi = Qimen(int(dated[0]), int(dated[1]), int(dated[2]), hour).find_jieqi()
@@ -522,6 +529,26 @@ def dinhorse(d, hour, minute):
     zdict = dict(zip(tiandi,range(1,13)))
     return zdict.get(getdinhorese)
 
+def hourguxu(d, hour, minute, place):
+    hourguxu = {"子": {"孤":"戌", "虛":"辰"},
+    "丑":{"孤":"亥", "虛":"巳"},
+    "寅":{"孤":"子", "虛":"午"},
+    "卯":{"孤":"丑", "虛":"未"},
+    "辰":{"孤":"寅", "虛":"申"},
+    "巳":{"孤":"卯", "虛":"酉"},
+    "午":{"孤":"辰", "虛":"戌"},
+    "未":{"孤":"巳", "虛":"亥"},
+    "申":{"孤":"午", "虛":"子"},
+    "酉":{"孤":"未", "虛":"丑"},
+    "戌":{"孤":"申", "虛":"寅"},
+    "亥":{"孤":"酉", "虛":"卯"}}
+    tiandi = getliuren(d, hour, minute).get("天地盤").get("地盤")
+    zdict = dict(zip(range(1,13), tiandi))
+    rzdict = dict(zip(tiandi,range(1,13)))
+    gu = rzdict.get(hourguxu.get(gz(d, hour, minute)[3][1]).get("孤"))
+    return zdict.get(int(place))==gu
+     
+
 def golden(d, hour, minute, place):
     dd = d.split("/")
     a = list(Qimen(int(dd[0]), int(dd[1]), int(dd[2]), int(hour)).g.get("星").keys())
@@ -561,10 +588,27 @@ def qimenh(d, hour, minute, place):
     td = multi_key_dict_get(t, int(place)) + multi_key_dict_get(d, int(place))
     return db_shigankeying.find_one({"天地":td}).get(td)[1]
 
-for y in range(1,11):
-    for i in range(1,13):
-        try:
-            db_matches.insert_one(getrow("2021/06/09", "HV",y, i, 3))
-            print("done")
-        except (IndexError, TypeError, NoSuchElementException):
-            pass
+def yincome_num(d, hour, minute, place):
+    #演禽
+    chinlist = {tuple(list("角女畢軫")):(1,10,19,28,37,46),
+    tuple(list("亢虛觜")):(2,11,20,29,38,47),
+    tuple(list("氐危參")):(3,12,21,30,39,48),
+    tuple(list("房室井")):(4,13,22,31,40,49),
+    tuple(list("心壁鬼")):(5,14,23,32,41),
+    tuple(list("尾奎柳")):(6,15,24,33,42),
+    tuple(list("箕婁星")):(7,16,25,34,43),
+    tuple(list("斗胃張")):(8,17,26,35,44),
+    tuple(list("牛昴翼")):(9,18,27,36,45)}
+    dd = d.split("/")
+    getyincome = yincome.Yincome(int(dd[0]), int(dd[1]), int(dd[2]), int(hour), int(minute))
+    mchin = multi_key_dict_get(chinlist, getyincome.month_chin())
+    dchin = multi_key_dict_get(chinlist, getyincome.day_chin())
+    hchin = multi_key_dict_get(chinlist, getyincome.hour_chin(1))
+    minchin = multi_key_dict_get(chinlist, getyincome.minute_chin(getyincome.hour_chin(1)))
+    fchin = multi_key_dict_get(chinlist, getyincome.fan_chin1(1))
+    djiang = multi_key_dict_get(chinlist, getyincome.candoujiang(1))
+    hyao = multi_key_dict_get(chinlist, getyincome.huoyao(1))
+    yincomenum = mchin + dchin + hchin + minchin + fchin + djiang + hyao
+    return place in yincomenum
+
+
