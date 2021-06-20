@@ -21,7 +21,6 @@ chrome_options.add_argument("--headless")
 browser = webdriver.Chrome(chrome_options=chrome_options)
 url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
 browser.get(url)
-
 url_list = ["https://racing.hkjc.com/racing/information/Chinese/Horse/SelectHorsebyChar.aspx?ordertype="+str(i) for i in [2,3,4]]
 
 tiangan = list('甲乙丙丁戊己庚辛壬癸')
@@ -139,7 +138,8 @@ def gethorsedata(horsename):
             } 
     return {**dict1, **dict2, **dict3, **dict4} 
 
-generals_zhi = {**dict(zip(['貴'+i for i in dizhi], "吉,吉,凶,吉,凶,凶,凶,吉,吉,凶,凶,吉".split(","))),
+generals_zhi = {
+**dict(zip(['貴'+i for i in dizhi], "吉,吉,凶,吉,凶,凶,凶,吉,吉,凶,凶,吉".split(","))),
 **dict(zip(['后'+i for i in dizhi], "凶,凶,吉,凶,凶,凶,凶,凶,吉,凶,凶,吉".split(","))),
 **dict(zip(['陰'+i for i in dizhi], "凶,凶,凶,凶,吉,凶,凶,吉,吉,吉,凶,凶".split(","))),
 **dict(zip(['玄'+i for i in dizhi], "吉,吉,凶,凶,吉,凶,凶,凶,吉,吉,吉,凶".split(","))),
@@ -160,8 +160,26 @@ def getracedate():
 
 
     
-def getrow(date, racecourse, raceno, ri, timeslot):
+def getrow(date,  raceno, ri, timeslot):
     #2021/06/06
+    whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
+    dayornight = {("星期一", "星期二", "星期三", "星期四", "星期五"):"夜", ("星期六", "星期日"):"晝" }
+    dayt = {"夜":18, "晝":12}
+    daytt = {"晝":
+            {0:["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"],
+            1:["12:30","13:00", "13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"],
+            2:["13:00","13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"]}, 
+            "夜":
+            {0:["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"], 
+            1:["19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00"],
+            2:["19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"],
+            3:["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
+            }
+    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+    if ddate =="星期三":
+        racecourse = "HV"
+    else:
+        racecourse ="ST"
     url = "https://racing.hkjc.com/racing/information/Chinese/Racing/LocalResults.aspx?RaceDate="+date+"&Racecourse="+racecourse+"&RaceNo="+str(raceno)
     browser.get(url)
     name = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[3]").text.split("(")[0]
@@ -185,21 +203,7 @@ def getrow(date, racecourse, raceno, ri, timeslot):
     win_odds = browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[12]").text
     trainer=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[5]").text
     jockey=browser.find_element_by_xpath(".//html/body/div/div[5]/table/tbody/tr["+str(ri)+"]/td[4]").text
-    
-    whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
-    dayornight = {("星期一", "星期二", "星期三", "星期四", "星期五"):"夜", ("星期六", "星期日"):"晝" }
-    dayt = {"夜":18, "晝":12}
-    daytt = {"晝":
-            {0:["12:45","13:15", "13:45", "14:15", "15:10", "15:40", "16:10", "16:40", "17:15", "17:50"],
-            1:["12:30","13:00", "13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"],
-            2:["13:00","13:30", "14:00", "14:30", "15:00", "15:35", "16:05", "16:35", "17:10", "17:45"]}, 
-            "夜":
-            {0:["19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30"], 
-            1:["19:30", "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00"],
-            2:["19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"],
-            3:["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
-            }
-    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+
     dnn = multi_key_dict_get(dayornight, ddate)
     time = dict(zip(range(1, len(daytt.get(dnn).get(timeslot))+1), daytt.get(dnn).get(timeslot))).get(int(raceno))
     hour = int(time.split(":")[0])
@@ -277,11 +281,11 @@ def getrow(date, racecourse, raceno, ri, timeslot):
               general, ggolden, getqimenh,getyincome ]
     return dict(zip(dict1,dict3))
 
-def gethorseracerow(date, racecourse, raceno):
+def gethorseracerow(date, raceno):
     horses = []
     for y in range(1,20):
         try:
-            b = getrow(date, racecourse, raceno, str(y))
+            b = getrow(date, raceno, str(y))
             horses.append(b)
         except NoSuchElementException:
             pass
@@ -363,6 +367,9 @@ def threemix(d, hour, minute):
     
 def getgeneral(d, hour, minute, place):
     #2021/06/06
+    if place > 12:
+        place = place - 12
+
     tiandi = getliuren(d, hour, minute).get("天地盤").get("地盤")
     general = getliuren(d, hour, minute).get("天地盤").get("天將")
     zdict = dict(zip(range(1,13), tiandi))
@@ -472,18 +479,18 @@ def yincome_num(d, hour, minute, place):
     yincomenum = mchin + dchin + hchin + minchin + fchin + djiang + hyao
     return place in yincomenum
 
-def importdaydata(date,racecourse,timeslot):
+def importdaydata(date,timeslot):
     for y in range(1,11):
         for i in range(1,15):
             try:
-                db_matches.insert_one(getrow(date, racecourse,y, i, timeslot))
+                db_matches.insert_one(getrow(date, y, i, timeslot))
                 print("第"+str(y)+"場第"+str(i)+"名次")
             except (IndexError, TypeError, NoSuchElementException, AttributeError, ValueError):
                 pass
-def importracedata(date,racecourse, raceno,timeslot):
+def importracedata(date, raceno,timeslot):
     for i in range(1,15):
         try:
-            db_matches.insert_one(getrow(date, racecourse, raceno, i ,timeslot))
-            print("第"+str(y)+"場第"+str(i)+"名次")
+            db_matches.insert_one(getrow(date,  raceno, i ,timeslot))
+            print("第"+str(raceno)+"場第"+str(i)+"名次")
         except (IndexError, TypeError, NoSuchElementException, AttributeError, ValueError):
                 pass
