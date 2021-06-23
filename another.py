@@ -554,8 +554,86 @@ def gen_racechart(num):
         except ValueError:
             pass
     raceinfo = browser.find_element_by_xpath(".//html/body/div[3]/div[8]/div/div/div[2]/div[3]/div[1]/span[2]").text
-    date = raceinfo.replace(" ","").split(",")[1]
-    time = raceinfo.replace(" ","").split(",")[2]
-    return pd.concat(a, ignore_index=True)
+    d = raceinfo.replace(" ","").split(",")[1].split("/")
+    date = d[2]+"/"+d[1]+"/"+d[0]
+    h = raceinfo.replace(" ","").split(",")[2].split(":")[0]
+    m = raceinfo.replace(" ","").split(",")[2].split(":")[1]
+    chart = pd.concat(a, ignore_index=True)
+    hour = int(h)
+    minute = int(m)                                        
+    draw_list = chart['檔位'].to_list()
+    horseno_list = chart['馬號'].to_list()
+    
+    getdhorse = dhorse(date, hour, minute)
+    getthree = three(date, hour, minute)
+    getdaythree = daythree(date, hour, minute)
+    getmonththree = monththree(date, hour, minute)
+    
+    liuren_place_month = [int(place) in getmonththree for place in draw_list]
+    liuren_horseno_month =  [int(horseno) in getmonththree for horseno in horseno_list]
+    liuren_place_day = [int(place) in getdaythree for place in draw_list]
+    liuren_horseno_day = [int(horseno) in getdaythree for horseno in horseno_list]
+    liuren_horseno =  [int(horseno) in getthree for horseno in horseno_list]
+    getmhorse = moonhorse(date, hour, minute)
+    getdinhorse = dinhorse(date, hour, minute)
+    ggolden = [golden(date, hour, minute, int(place)) for place in draw_list]
+    liuren_place = [int(place) in getthree for place in draw_list]
+    general =  [getgeneral(date, hour, minute, int(place)) for place in draw_list]
+    getyincome =  [yincome_num(date, hour, minute, int(place)) for place in draw_list]
+    guxu_place = [hourguxu(date, hour, minute, int(place)) for place in draw_list]
+    guxu_hno = [hourguxu(date, hour, minute, int(horseno)) for horseno in horseno_list]
+    qimenh_list = []
+    liuren_dhoresno_list = []
+    liuren_dhorseplace_list = []
+    liuren_dinhorse_list = []
+    getmhorse_list = []
+    for place in draw_list:
+        try:
+            getqimenh = qimenh(date, hour, minute, int(place))
+            qimenh_list.append(getqimenh)
+        except TypeError:
+            getqimenh = "凶"
+            qimenh_list.append(getqimenh)
+        if getdhorse == int(place):
+            liuren_dhorse = True
+            liuren_dhorseplace_list.append(liuren_dhorse)
+        else:
+            liuren_dhorse = False
+            liuren_dhorseplace_list.append(liuren_dhorse)
+        if getmhorse == int(place):
+            liuren_mhorse = True
+            getmhorse_list.append(liuren_mhorse)
+        else:
+            liuren_mhorse = False
+            getmhorse_list.append(liuren_mhorse)
+        if getdinhorse == int(place):
+            liuren_dinhorse = True
+            liuren_dinhorse_list.append(liuren_dinhorse)
+        else:
+            liuren_dinhorse = False
+            liuren_dinhorse_list.append(liuren_dinhorse)
+    for horseno in horseno_list:
+        if int(horseno) == getdhorse:
+            liuren_dhoresno = True
+            liuren_dhoresno_list.append(liuren_dhoresno)
+        else:
+            liuren_dhoresno = False
+            liuren_dhoresno_list.append(liuren_dhoresno)
+    chart["演禽"] = getyincome
+    chart["檔時孤"] = guxu_place
+    chart["號時孤"] = guxu_hno
+    chart["天馬"] = getmhorse_list
+    chart["丁馬"] =liuren_dinhorse_list
+    chart["日馬"] =liuren_dhorseplace_list
+    chart["日奇"] = ggolden
+    chart["時奇"] = qimenh_list
+    chart["六壬神煞"] = general
+    chart["檔壬月三"] = liuren_place_month
+    chart["檔壬日三"] = liuren_place_day
+    chart["檔壬時三"] = liuren_place
+    chart["號壬月三"] = liuren_horseno_month
+    chart["號壬日三"] = liuren_horseno_day
+    chart["號壬時三"] = liuren_horseno
+    return chart
 
-gen_racechart(2)
+gen_racechart(1)
