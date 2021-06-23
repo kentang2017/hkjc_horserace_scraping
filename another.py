@@ -545,11 +545,12 @@ def gen_racechart(num):
     for i in range(2,15):
         a = browser.find_element_by_xpath(".//html/body/div[3]/div[8]/div/div/div[2]/div[4]/table/tbody[1]/tr["+str(i)+"]").text
         raceno_list.append(a)
-    raceno_list = [i.split(" ") for i in raceno_list]
+    raceno_list1 = [i.split(" ")[0:5] for i in raceno_list][:-1]
+    r = [i.split(" ")[-1] for i in raceno_list][:-1]
     a = []
-    for b in range(0, len(raceno_list)):
+    for b in range(0, len(raceno_list1)):
         try:
-            c = pd.DataFrame(raceno_list[b], ["馬號","馬名","檔位","負磅","騎師","練馬師","馬匹體重","評分","配備","6次近績"]).transpose()
+            c = pd.DataFrame(raceno_list1[b], ["馬號","馬名","檔位","負磅","騎師"]).transpose()
             a.append(c)
         except ValueError:
             pass
@@ -619,9 +620,10 @@ def gen_racechart(num):
         else:
             liuren_dhoresno = False
             liuren_dhoresno_list.append(liuren_dhoresno)
+    chart["6次近績"] = r
     chart["演禽"] = list(map(int, getyincome))
-    chart["檔時孤"] = list(map(int, guxu_place))
-    chart["號時孤"] = list(map(int, guxu_hno))
+    chart["檔時孤"] = guxu_place
+    chart["號時孤"] = guxu_hno
     chart["日奇"] =  [{"吉":1, "凶":0}.get(i) for i in ggolden]
     chart["時奇"] =  [{"吉":1, "凶":0}.get(i) for i in qimenh_list]
     chart["六壬神煞"] = [{"吉":1, "凶":0}.get(i) for i in general]
