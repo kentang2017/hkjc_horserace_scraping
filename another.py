@@ -536,3 +536,26 @@ def importracedata(date, raceno,timeslot):
             print("第"+str(raceno)+"場第"+str(i)+"名次")
         except (IndexError, TypeError, NoSuchElementException, AttributeError, ValueError):
                 pass
+         
+#提取實時賽跑資料
+def gen_racechart(num):
+    raceno_list = []
+    url = "https://bet.hkjc.com/racing/index.aspx?lang=ch&date=2021-06-23&venue=HV&raceno="+str(num)
+    browser.get(url)
+    for i in range(2,15):
+        a = browser.find_element_by_xpath(".//html/body/div[3]/div[8]/div/div/div[2]/div[4]/table/tbody[1]/tr["+str(i)+"]").text
+        raceno_list.append(a)
+    raceno_list = [i.split(" ") for i in raceno_list]
+    a = []
+    for b in range(0, len(raceno_list)):
+        try:
+            c = pd.DataFrame(raceno_list[b], ["馬號","馬名","檔位","負磅","騎師","練馬師","馬匹體重","評分","配備","6次近績"]).transpose()
+            a.append(c)
+        except ValueError:
+            pass
+    raceinfo = browser.find_element_by_xpath(".//html/body/div[3]/div[8]/div/div/div[2]/div[3]/div[1]/span[2]").text
+    date = raceinfo.replace(" ","").split(",")[1]
+    time = raceinfo.replace(" ","").split(",")[2]
+    return pd.concat(a, ignore_index=True)
+
+gen_racechart(2)
