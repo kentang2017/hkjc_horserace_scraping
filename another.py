@@ -622,18 +622,18 @@ def gen_racechart(num):
     chart["演禽"] = getyincome
     chart["檔時孤"] = guxu_place
     chart["號時孤"] = guxu_hno
-    chart["天馬"] = getmhorse_list
-    chart["丁馬"] =liuren_dinhorse_list
-    chart["日馬"] =liuren_dhorseplace_list
     chart["日奇"] = ggolden
     chart["時奇"] = qimenh_list
     chart["六壬神煞"] = general
-    chart["檔壬月三"] = liuren_place_month
-    chart["檔壬日三"] = liuren_place_day
-    chart["檔壬時三"] = liuren_place
-    chart["號壬月三"] = liuren_horseno_month
-    chart["號壬日三"] = liuren_horseno_day
-    chart["號壬時三"] = liuren_horseno
-    return chart
+    chart["天馬"] = getmhorse_list.astype(int)
+    chart["丁馬"] =liuren_dinhorse_list.astype(int)
+    chart["日馬"] =liuren_dhorseplace_list.astype(int)
+    chart["檔壬月三"] = liuren_place_month.astype(int)
+    chart["檔壬日三"] = liuren_place_day.astype(int)
+    chart["檔壬時三"] = liuren_place.astype(int)
+    chart["號壬月三"] = liuren_horseno_month.astype(int)
+    chart["號壬日三"] = liuren_horseno_day.astype(int)
+    chart["號壬時三"] = liuren_horseno.astype(int)
+    return chart.to_csv("race"+str(num)+".csv")
 
 gen_racechart(1)
