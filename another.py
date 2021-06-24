@@ -639,3 +639,5 @@ def gen_racechart(num):
     return chart.to_csv("race"+str(num)+".csv")
 
 gen_racechart(1)
+
+pd.concat([pd.DataFrame.from_dict(i,  orient='index').transpose() for i in db_matches.find()])
