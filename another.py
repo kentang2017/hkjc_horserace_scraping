@@ -1,26 +1,30 @@
+
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jul 30 08:30:35 2020
 @author: Ken Tang
 @email: kinyeah@gmail.com
 """
-
 from pymongo import MongoClient
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
 import shlex
 import pandas as pd
+import yincome
 import datetime, itertools
 from kinqimen import Qimen
 import kinliuren
 import sxtwl
+from datetime import datetime
 
 chrome_options = Options()
 chrome_options.add_argument("--headless")
 browser = webdriver.Chrome(chrome_options=chrome_options)
 url = 'https://racing.hkjc.com/racing/info/meeting/Results/Chinese/Local/'
 browser.get(url)
+
+
 url_list = ["https://racing.hkjc.com/racing/information/Chinese/Horse/SelectHorsebyChar.aspx?ordertype="+str(i) for i in [2,3,4]]
 
 tiangan = list('甲乙丙丁戊己庚辛壬癸')
@@ -32,48 +36,6 @@ db_shigankeying = db.shigankeying
 
 hrdb = client.get_database('hkjc')
 db_matches = hrdb.matches
-
-racedates = {
- '2021/05/19':3,
- '2021/05/16':2,
- '2021/05/12':2,
- '2021/05/08':1,
- '2021/05/05':3,
- '2021/05/02':1,
- '2021/04/28':3,
- '2021/04/25':0,
- '2021/04/21':3,
- '2021/04/17':2,
- '2021/04/14':3,
- '2021/04/11':1,
- '2021/04/08':3,
- '2021/04/05':2,
- '2021/03/31':3,
- '2021/03/28':0,
- '2021/03/24':3,
- '2021/03/21':2,
- '2021/03/17':3,
- '2021/03/13':2,
- '2021/03/10':3,
- '2021/03/07':2,
- '2021/03/03':3,
- '2021/02/28':2,
- '2021/02/24':3,
- '2021/02/21':2,
- '2021/02/17':3,
- '2021/02/14':1,
- '2021/02/10':3,
- '2021/02/06':2,
- '2021/02/03':3,
- '2021/01/31':2,
- '2021/01/27':3,
- '2021/01/24':2,
- '2021/01/20':3,
- '2021/01/17':2,
- '2021/01/13':3,
- '2021/01/10':2,
- '2021/01/06':3,
- '2021/01/01':1}
 
 def multi_key_dict_get(d, k):
     for keys, v in d.items():
@@ -217,7 +179,7 @@ def getrow(date,  raceno, ri, timeslot):
             2:["19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"],
             3:["18:45", "19:15", "19:45", "20:15", "20:45", "21:15", "21:45", "22:15", "22:50"]}
             }
-    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+    ddate = whichday.get(datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
     if ddate =="星期三":
         racecourse = "HV"
     else:
@@ -536,16 +498,16 @@ def importracedata(date, raceno,timeslot):
             print("第"+str(raceno)+"場第"+str(i)+"名次")
         except (IndexError, TypeError, NoSuchElementException, AttributeError, ValueError):
                 pass
-         
+            
 #提取實時賽跑資料
 def gen_racechart(num):
     raceno_list = []
-    year = str(date.today().year)
-    month = str(date.today().month).zfill(2)
-    day = str(date.today().day).zfill(2)
+    year = str(datetime.now().year)
+    month = str(datetime.now().month).zfill(2)
+    day = str(datetime.now().day).zfill(2)
     whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
-    date = year+"/"+month+"/"+day
-    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+    dated = year+"/"+month+"/"+day
+    ddate = whichday.get(datetime.strptime(dated.replace("/",""), '%Y%m%d').strftime("%a"))
     if ddate =="星期三":
         racecourse = "HV"
     else:
@@ -647,7 +609,5 @@ def gen_racechart(num):
     chart["號壬日三"] =list(map(int,  liuren_horseno_day))
     chart["號壬時三"] = list(map(int,  liuren_horseno))
     return chart.to_csv("race"+str(num)+".csv")
-
-gen_racechart(1)
 
 pd.concat([pd.DataFrame.from_dict(i,  orient='index').transpose() for i in db_matches.find()])
