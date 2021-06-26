@@ -540,7 +540,17 @@ def importracedata(date, raceno,timeslot):
 #提取實時賽跑資料
 def gen_racechart(num):
     raceno_list = []
-    url = "https://bet.hkjc.com/racing/index.aspx?lang=ch&date=2021-06-23&venue=HV&raceno="+str(num)
+    year = str(date.today().year)
+    month = str(date.today().month).zfill(2)
+    day = str(date.today().day).zfill(2)
+    whichday = {"Tue":"星期二", "Mon": "星期一", "Wed":"星期三", "Thu":"星期四", "Fri":"星期五", "Sat":"星期六", "Sun":"星期日"}
+    date = year+"/"+month+"/"+day
+    ddate = whichday.get(datetime.datetime.strptime(date.replace("/",""), '%Y%m%d').strftime("%a"))
+    if ddate =="星期三":
+        racecourse = "HV"
+    else:
+        racecourse ="ST"
+    url = "https://bet.hkjc.com/racing/index.aspx?lang=ch&date="+year+"-"+month+"-"+day+"&venue="+racecourse+"&raceno="+str(num)
     browser.get(url)
     for i in range(2,15):
         a = browser.find_element_by_xpath(".//html/body/div[3]/div[8]/div/div/div[2]/div[4]/table/tbody[1]/tr["+str(i)+"]").text
